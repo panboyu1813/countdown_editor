@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>倒數事件編輯器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #5a67d8;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .section h2 {
+            color: #4c51bf;
+            margin-top: 0;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #5a67d8;
+            box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+        }
+
+        .events-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .event-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .event-card:hover {
+            border-color: #cbd5e0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-form {
+            display: grid;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #5a67d8;
+            box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.1);
+        }
+
+        .add-event-card {
+            background: linear-gradient(135deg, #e6fffa 0%, #b2f5ea 100%);
+            border: 2px dashed #4fd1c7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-event-card:hover {
+            background: linear-gradient(135deg, #b2f5ea 0%, #81e6d9 100%);
+            border-color: #38b2ac;
+        }
+
+        .add-icon {
+            font-size: 3rem;
+            color: #38b2ac;
+            margin-bottom: 10px;
+        }
+
+        .export-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #22543d;
+            border: 1px solid #c6f6d5;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #feb2b2;
+        }
+
+        .status-message {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .events-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .export-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕐 倒數事件編輯器</h1>
+        
+        <!-- HTML 輸入區 -->
+        <div class="section">
+            <h2>📝 貼上 HTML 程式碼</h2>
+            <textarea id="htmlInput" placeholder="請將 countdown_single_round_tc.html 的內容貼上到這裡..."></textarea>
+            <button class="btn" onclick="parseHTML()">🔍 解析程式碼</button>
+            <div id="parseStatus"></div>
+        </div>
+
+        <!-- 事件編輯區 -->
+        <div class="section" id="eventSection" style="display: none;">
+            <h2>⚡ 編輯倒數事件</h2>
+            <div id="eventsContainer" class="events-container"></div>
+        </div>
+
+        <!-- 匯出區 -->
+        <div class="section" id="exportSection" style="display: none;">
+            <h2>💾 匯出修改後的 HTML</h2>
+            <div class="export-actions">
+                <button class="btn btn-success" onclick="exportHTML()">📤 產生 HTML</button>
+                <button class="btn btn-secondary" onclick="copyToClipboard()" id="copyBtn" style="display: none;">📋 複製到剪貼簿</button>
+                <a class="btn" id="downloadBtn" style="display: none;">⬇️ 下載檔案</a>
+            </div>
+            <div id="exportStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        let originalHTML = '';
+        let events = [];
+        let generatedHTML = '';
+
+        function showStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status-message ${type === 'success' ? 'alert-success' : type === 'error' ? 'alert-error' : ''}">${message}</div>`;
+            setTimeout(() => {
+                element.innerHTML = '';
+            }, 3000);
+        }
+
+        function parseHTML() {
+            const htmlContent = document.getElementById('htmlInput').value.trim();
+            
+            if (!htmlContent) {
+                showStatus('parseStatus', '❌ 請先貼上 HTML 程式碼！', 'error');
+                return;
+            }
+
+            try {
+                originalHTML = htmlContent;
+                
+                // 多種方式嘗試提取 COUNTDOWN_EVENTS
+                let eventsData = [];
+                
+                // 方法1: 直接尋找 window.COUNTDOWN_EVENTS 定義
+                let scriptMatch = htmlContent.match(/window\.COUNTDOWN_EVENTS\s*=\s*(\[[\s\S]*?\]);/);
+                
+                // 方法2: 尋找 EVENTS 常數中的預設值
+                if (!scriptMatch) {
+                    const eventsConstMatch = htmlContent.match(/const EVENTS = \(window\.COUNTDOWN_EVENTS[^:]*?:\s*(\[[\s\S]*?\])\s*\);/);
+                    if (eventsConstMatch) {
+                        scriptMatch = [null, eventsConstMatch[1]];
+                    }
+                }
+                
+                // 方法3: 尋找完整的三元運算子
+                if (!scriptMatch) {
+                    const ternaryMatch = htmlContent.match(/window\.COUNTDOWN_EVENTS\s*&&[\s\S]*?:\s*(\[[\s\S]*?\])\s*\);/);
+                    if (ternaryMatch) {
+                        scriptMatch = [null, ternaryMatch[1]];
+                    }
+                }
+                
+                if (scriptMatch && scriptMatch[1]) {
+                    // 解析現有的事件
+                    const eventsCode = scriptMatch[1];
+                    eventsData = parseEventsFromCode(eventsCode);
+                    
+                    if (eventsData.length > 0) {
+                        events = eventsData;
+                        showStatus('parseStatus', `✅ 成功解析！找到 ${events.length} 個事件`, 'success');
+                    } else {
+                        events = [];
+                        showStatus('parseStatus', '⚠️ 找到事件區塊但無法解析，您可以開始新增事件', 'success');
+                    }
+                } else {
+                    // 沒有找到事件，使用預設值
+                    events = [];
+                    showStatus('parseStatus', '✅ HTML 解析完成！未找到現有事件，您可以開始新增事件', 'success');
+                }
+
+                document.getElementById('eventSection').style.display = 'block';
+                document.getElementById('exportSection').style.display = 'block';
+                renderEvents();
+                
+            } catch (error) {
+                console.error('解析錯誤:', error);
+                showStatus('parseStatus', '❌ HTML 解析失敗，請檢查程式碼格式', 'error');
+            }
+        }
+
+        function parseEventsFromCode(eventsCode) {
+            try {
+                console.log('正在解析事件代碼:', eventsCode);
+                
+                // 清理並標準化事件代碼
+                let cleanCode = eventsCode.trim();
+                
+                // 移除註釋
+                cleanCode = cleanCode.replace(/\/\*[\s\S]*?\*\//g, '');
+                cleanCode = cleanCode.replace(/\/\/.*$/gm, '');
+                
+                // 處理 parseLocalDate 函數呼叫
+                cleanCode = cleanCode.replace(/parseLocalDate\s*\(\s*["']([^"']+)["']\s*\)/g, '"$1"');
+                
+                // 確保是有效的 JSON 格式
+                if (!cleanCode.startsWith('[')) {
+                    cleanCode = '[' + cleanCode + ']';
+                }
+                if (!cleanCode.endsWith(']')) {
+                    cleanCode = cleanCode + ']';
+                }
+                
+                // 修正常見的格式問題
+                cleanCode = cleanCode.replace(/,\s*}/g, '}'); // 移除物件末尾多餘的逗號
+                cleanCode = cleanCode.replace(/,\s*]/g, ']'); // 移除陣列末尾多餘的逗號
+                
+                console.log('清理後的代碼:', cleanCode);
+                
+                const eventsArray = JSON.parse(cleanCode);
+                
+                const parsedEvents = eventsArray.map(event => {
+                    // 確保所有必要的屬性都存在
+                    return {
+                        date: event.date || new Date().toISOString().split('T')[0],
+                        label: event.label || '未命名事件',
+                        type: event.type || 'other'
+                    };
+                });
+                
+                console.log('解析結果:', parsedEvents);
+                return parsedEvents;
+                
+            } catch (error) {
+                console.error('事件解析錯誤:', error);
+                console.log('原始代碼:', eventsCode);
+                
+                // 如果 JSON 解析失敗，嘗試手動解析
+                try {
+                    return manualParseEvents(eventsCode);
+                } catch (manualError) {
+                    console.error('手動解析也失敗:', manualError);
+                    return [];
+                }
+            }
+        }
+
+        function manualParseEvents(eventsCode) {
+            const events = [];
+            
+            // 使用正則表達式手動提取事件
+            const eventPattern = /\{\s*date:\s*(?:parseLocalDate\s*\(\s*)?["']([^"']+)["']\s*\)?\s*,\s*label:\s*["']([^"']+)["']\s*,\s*type:\s*["']([^"']+)["']\s*\}/g;
+            
+            let match;
+            while ((match = eventPattern.exec(eventsCode)) !== null) {
+                events.push({
+                    date: match[1],
+                    label: match[2],
+                    type: match[3]
+                });
+            }
+            
+            return events;
+        }
+
+        function renderEvents() {
+            const container = document.getElementById('eventsContainer');
+            container.innerHTML = '';
+
+            // 渲染現有事件
+            events.forEach((event, index) => {
+                const eventCard = createEventCard(event, index);
+                container.appendChild(eventCard);
+            });
+
+            // 添加新增事件的卡片
+            const addCard = createAddEventCard();
+            container.appendChild(addCard);
+        }
+
+        function createEventCard(event, index) {
+            const card = document.createElement('div');
+            card.className = 'event-card';
+            
+            card.innerHTML = `
+                <div class="event-form">
+                    <div class="form-group">
+                        <label>📅 事件名稱</label>
+                        <input type="text" value="${event.label}" onchange="updateEvent(${index}, 'label', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>📅 日期</label>
+                        <input type="date" value="${event.date}" onchange="updateEvent(${index}, 'date', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>🏷️ 類型</label>
+                        <select onchange="updateEvent(${index}, 'type', this.value)">
+                            <option value="exam" ${event.type === 'exam' ? 'selected' : ''}>考試</option>
+                            <option value="holiday" ${event.type === 'holiday' ? 'selected' : ''}>假期</option>
+                            <option value="other" ${event.type === 'other' ? 'selected' : ''}>其他</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-danger" onclick="deleteEvent(${index})">🗑️ 刪除事件</button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function createAddEventCard() {
+            const card = document.createElement('div');
+            card.className = 'event-card add-event-card';
+            card.onclick = addNewEvent;
+            
+            card.innerHTML = `
+                <div style="text-align: center;">
+                    <div class="add-icon">➕</div>
+                    <div style="font-size: 1.2rem; font-weight: 600; color: #38b2ac;">新增事件</div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function updateEvent(index, field, value) {
+            if (events[index]) {
+                events[index][field] = value;
+            }
+        }
+
+        function deleteEvent(index) {
+            if (confirm('確定要刪除這個事件嗎？')) {
+                events.splice(index, 1);
+                renderEvents();
+            }
+        }
+
+        function addNewEvent() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            const newEvent = {
+                date: tomorrow.toISOString().split('T')[0],
+                label: '新事件',
+                type: 'other'
+            };
+            
+            events.push(newEvent);
+            renderEvents();
+        }
+
+        function exportHTML() {
+            if (!originalHTML) {
+                showStatus('exportStatus', '❌ 請先解析 HTML 程式碼！', 'error');
+                return;
+            }
+
+            try {
+                // 生成新的 COUNTDOWN_EVENTS 程式碼
+                const eventsCode = generateEventsCode();
+                
+                // 替換或插入 COUNTDOWN_EVENTS
+                let modifiedHTML = originalHTML;
+                
+                const scriptMatch = modifiedHTML.match(/window\.COUNTDOWN_EVENTS\s*=\s*\[[\s\S]*?\];/);
+                
+                if (scriptMatch) {
+                    // 替換現有的事件
+                    modifiedHTML = modifiedHTML.replace(scriptMatch[0], `window.COUNTDOWN_EVENTS = ${eventsCode};`);
+                } else {
+                    // 在適當位置插入事件
+                    const insertPoint = modifiedHTML.indexOf('const EVENTS = (window.COUNTDOWN_EVENTS');
+                    if (insertPoint !== -1) {
+                        modifiedHTML = modifiedHTML.slice(0, insertPoint) + 
+                                     `    window.COUNTDOWN_EVENTS = ${eventsCode};\n\n    ` + 
+                                     modifiedHTML.slice(insertPoint);
+                    }
+                }
+
+                generatedHTML = modifiedHTML;
+                
+                // 顯示匯出按鈕
+                document.getElementById('copyBtn').style.display = 'inline-block';
+                document.getElementById('downloadBtn').style.display = 'inline-block';
+                
+                // 設定下載連結
+                const blob = new Blob([generatedHTML], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.href = url;
+                downloadBtn.download = 'countdown_modified.html';
+                
+                showStatus('exportStatus', `✅ HTML 生成成功！包含 ${events.length} 個事件`, 'success');
+                
+            } catch (error) {
+                console.error('匯出錯誤:', error);
+                showStatus('exportStatus', '❌ HTML 生成失敗，請檢查事件資料', 'error');
+            }
+        }
+
+        function generateEventsCode() {
+            const eventsArray = events.map(event => {
+                return `{ date: parseLocalDate("${event.date}"), label: "${event.label.replace(/"/g, '\\"')}", type: "${event.type}" }`;
+            });
+            
+            return `[\n      ${eventsArray.join(',\n      ')}\n    ]`;
+        }
+
+        async function copyToClipboard() {
+            if (!generatedHTML) {
+                showStatus('exportStatus', '❌ 請先產生 HTML！', 'error');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(generatedHTML);
+                showStatus('exportStatus', '✅ 已複製到剪貼簿！', 'success');
+            } catch (error) {
+                console.error('複製失敗:', error);
+                showStatus('exportStatus', '❌ 複製失敗，請手動選取內容', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
