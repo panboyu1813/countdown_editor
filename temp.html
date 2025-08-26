@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>各重大事項時間倒數</title>
+
+  <style>
+    :root{
+      /* ===== 色彩（Color System） ===== */
+      --bg-start:#f6f8ff;
+      --bg-end:#e8f6ff;
+      --text:#1f2937;
+      --muted:#64748b;
+      --card:#ffffff;
+      --shadow:0 10px 25px rgba(0,0,0,.08);
+      --shadow-hover:0 14px 35px rgba(0,0,0,.12);
+      /* 類別色彩 */
+      --exam:#fff2cc;
+      --holiday:#d8f3dc;
+      --other:#f7f7f7;
+
+      /* ===== 版面（Layout） ===== */
+      --radius:16px;
+      --pad:18px;
+      --maxw:1200px;
+
+      /* ===== 字體（Typography） ===== */
+      /* 以 TW glyph 為主，避免 JP 文字形 */
+      /*--font-sans:"GenSenRoundedTW","GenSenRoundedPJP","Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;*/
+      --size-h1:clamp(20px, 3.6vw, 36px);
+      --size-title:clamp(18px, 2.4vw, 22px);
+      --size-days:clamp(26px, 6vw, 42px);
+      --size-small:14px;
+
+      /* ===== 臨界值（Thresholds） ===== */
+      --urgent-days:10;
+      --soon-max-days:30;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--text);
+      background:linear-gradient(135deg, var(--bg-start), var(--bg-end));
+      display:flex;flex-direction:column;
+      font-family:var(--font-sans);
+      -webkit-text-size-adjust:100%;
+      text-rendering:optimizeLegibility;
+    }
+
+    /* 事件區強制使用字型（避免舊樣式覆蓋） */
+    .cards, .cards *{ font-family:var(--font-sans) !important; }
+
+    /* Header / Footer */
+    .site-header{
+      padding:20px clamp(16px,3vw,36px);
+      display:flex;align-items:center;justify-content:center;gap:12px;
+    }
+    h1{margin:0;font-size:var(--size-h1);letter-spacing:.02em}
+    .site-footer{
+      padding:24px clamp(16px,3vw,36px);
+      font-size:var(--size-small); color:var(--muted);
+      text-align:center;
+    }
+
+    /* 內容區 */
+    main{width:min(var(--maxw), 94vw);margin-inline:auto;padding:0 clamp(12px,3vw,24px) 28px;flex:1}
+    .cards{
+      list-style:none;padding:0;margin:0;
+      display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;
+    }
+
+    .card{
+      background:var(--card); border-radius:var(--radius); padding:var(--pad);
+      box-shadow:var(--shadow); transition:transform .2s ease, box-shadow .2s ease;
+      position:relative; overflow:hidden;
+    }
+    .card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-hover) }
+    .card__badge{
+      position:absolute; inset:0 0 auto auto; margin:10px;
+      font-size:12px; color:#374151; background:rgba(255,255,255,.85);
+      border-radius:999px; padding:4px 8px; box-shadow:0 2px 6px rgba(0,0,0,.08);
+    }
+    .card__title{ font-size:var(--size-title); margin:0 0 6px 0; }
+    .card__days{
+      font-weight:800; margin:8px 0 2px 0; font-size:var(--size-days); line-height:1.1;
+      font-variant-numeric: tabular-nums lining-nums; /* 數字更穩定 */
+    }
+    .card__desc{ margin:0; color:var(--muted); font-size:var(--size-small); }
+
+    .card--exam{ background:var(--exam); }
+    .card--holiday{ background:var(--holiday); }
+    .card--other{ background:var(--other); }
+
+    /* 緊急狀況提醒（<=10 天） */
+    @keyframes pulse{
+      0%{ transform:scale(1); box-shadow:var(--shadow); }
+      50%{ transform:scale(1.02); box-shadow:0 18px 40px rgba(0,0,0,.18); }
+      100%{ transform:scale(1); box-shadow:var(--shadow); }
+    }
+    .urgent{ animation:pulse 1.2s ease-in-out infinite; }
+
+    /* 兼容你原本的 .countdown-days 類別（保留原設定） */
+    .countdown-days.less-than-10 {
+      font-size: 45px;
+      color: red;
+    }
+    .countdown-days.between-11-and-30 {
+      font-size: 40px;
+      color: blue;
+    }
+    .countdown-days.more-than-30 {
+      font-size: 35px;
+      color: black;
+    }
+  </style>
+
+  <!-- emfont 載入 -->
+  <script src="https://font.emtech.cc/emfont.js"></script>
+</head>
+<body class="emfont-GenJyuuGothicP-700">
+  <header class="site-header">
+    <h1>各重大事項時間倒數</h1>
+  </header>
+
+  <main>
+    <ul id="eventList" class="cards" aria-live="polite"></ul>
+  </main>
+
+  <footer class="site-footer">
+    <b>本網站使用正體字</b><br /><br />
+    版權所有 &copy; 2024-2027 新竹市私立曙光女子高級中學113敬資訊
+  </footer>
+
+  <script>
+    // 初始化 emfont
+    try { emfont.init(); } catch (e) {}
+
+    /**
+     * @typedef {Object} CountdownEvent
+     * @property {Date} date - 事件日期（使用本地時區 00:00）
+     * @property {string} label - 事件名稱
+     * @property {"exam"|"holiday"|"other"} type - 事件類型
+     */
+
+    const REFRESH_MS = 60_000;
+    const DAYS_URGENT = 10;
+    const DAYS_SOON_MAX = 30;
+
+    /** @type {CountdownEvent[]} */
+        window.COUNTDOWN_EVENTS = [
+      
+    ];
+
+    function parseLocalDate(ymd){ const [y,m,d] = ymd.split("-").map(Number); return new Date(y, m-1, d); }
+    function stripToLocalDate(dt){ return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); }
+    function calculateRemainingDays(eventDate, now = new Date()){
+      const msPerDay = 24*60*60*1000;
+      const start = stripToLocalDate(now).getTime();
+      const target = stripToLocalDate(eventDate).getTime();
+      return Math.ceil((target - start)/msPerDay);
+    }
+    function getFutureEventsSorted(events, now = new Date()){
+      return events.map(ev=>({event:ev, days:calculateRemainingDays(ev.date, now)}))
+                   .filter(x=>x.days>=0)
+                   .sort((a,b)=>a.days-b.days);
+    }
+    function getDayClasses(days){
+      let rangeClass = "more-than-30";
+      if (days <= DAYS_URGENT) rangeClass = "less-than-10";
+      else if (days <= DAYS_SOON_MAX) rangeClass = "between-11-and-30";
+      const urgent = days <= DAYS_URGENT;
+      return { urgent, rangeClass };
+    }
+    function createEventCard(item){
+      const li = document.createElement("li");
+      li.className = `card card--${item.event.type}`;
+      const { urgent, rangeClass } = getDayClasses(item.days);
+      if (urgent) li.classList.add("urgent");
+      li.innerHTML = [
+        `<span class="card__badge">${item.event.type === "exam" ? "考試" : item.event.type === "holiday" ? "假期" : "其他"}</span>`,
+        `<h3 class="card__title">${escapeHTML(item.event.label)}</h3>`,
+        `<div class="card__days countdown-days ${rangeClass}">${item.days} 天</div>`,
+        `<p class="card__desc">日期：${formatYMD(item.event.date)}</p>`
+      ].join("");
+      return li;
+    }
+    function renderEvents(events){
+      const list = document.getElementById("eventList");
+      if (!list) return;
+      list.innerHTML = "";
+      for (const item of getFutureEventsSorted(events)){
+        list.appendChild(createEventCard(item));
+      }
+    }
+    function formatYMD(d){
+      const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,"0"); const da=String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${da}`;
+    }
+    function escapeHTML(s){ return s.replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]||c)); }
+
+    function init(){ renderEvents(EVENTS); setInterval(()=>renderEvents(EVENTS), REFRESH_MS); }
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
