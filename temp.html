@@ -131,7 +131,7 @@
 
   <footer class="site-footer">
     <b>本網站使用正體字</b><br /><br />
-    版權所有 &copy; 2024-2027 新竹市私立曙光女子高級中學113敬資訊
+   &copy; 版權所有 &copy;
   </footer>
 
   <script>
@@ -153,7 +153,7 @@
         window.COUNTDOWN_EVENTS = [
       
     ];
-
+    const EVENTS = window.COUNTDOWN_EVENTS;
     function parseLocalDate(ymd){ const [y,m,d] = ymd.split("-").map(Number); return new Date(y, m-1, d); }
     function stripToLocalDate(dt){ return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); }
     function calculateRemainingDays(eventDate, now = new Date()){
